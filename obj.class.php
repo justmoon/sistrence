@@ -12,10 +12,6 @@ abstract class Object implements ArrayAccess
 	{
 		$this->id = $id;
 		$this->entry = $entry;
-		
-		if ($id === null) {
-			trigger_error('ID null given to &quot;'.get_class($this).'&quot; constructor.', E_USER_WARNING);
-		}
 	}
 	
 	public function getId()
@@ -47,9 +43,9 @@ abstract class Object implements ArrayAccess
 		return $this->entry;
 	}
 	
-	static public function getBy($field, $value)
+	public function getBy($field, $value)
 	{
-		$class = get_called_class();
+		$class = get_class($this);
 		
 		$op = Sis::op(constant($class.'::TABLE'));
 		$op->eq($field, $value);
@@ -58,9 +54,9 @@ abstract class Object implements ArrayAccess
 		return self::objectify($entry);
 	}
 	
-	static public function create($data)
+	public function create($data)
 	{
-		$class = get_called_class();
+		$class = get_class($this);
 		
 		$op = Sis::op(constant($class.'::TABLE'));
 		$id = $op->doInsert($data);
@@ -95,16 +91,11 @@ abstract class Object implements ArrayAccess
 	 */
 	public function getOp()
 	{
-		if (isset($this)) {
-			$op = Sis::op(constant(get_class($this).'::TABLE'));
-			$op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
-		
-			if ($this->customFields !== null) {
-				call_user_func(array($op, 'customFields'), implode(', ', $this->customFields));
-			}
-		} else {
-			$class = get_called_class();
-			$op = Sis::op(constant($class.'::TABLE'));
+		$op = Sis::op(constant(get_class($this).'::TABLE'));
+		$op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
+	
+		if ($this->customFields !== null) {
+			call_user_func(array($op, 'fields'), implode(', ', $this->customFields));
 		}
 		
 		return $op;
@@ -170,16 +161,16 @@ abstract class Object implements ArrayAccess
 	 * 
 	 * You can either pass a single array or an array of arrays.
 	 */
-	static public function objectify($array)
+	public function objectify($array)
 	{
-		$class = get_called_class();
+		$class = get_class($this);
 		
 		// TODO: PHP 5.3: Replace "constant($class.'::ID_FIELD')" by $class::ID_FIELD;
 		$idField = constant($class.'::ID_FIELD');
 		if (isset($array[$idField])) {
     		return new $class($array[$idField], $array);
 		} elseif (isset($array[0][$idField])) {
-			return array_map(array($class, 'objectify'), $array);
+			return array_map(array($this, 'objectify'), $array);
 		} elseif (get_class($array) == $class) {
 			// Work is already done...
 			return $array;
@@ -225,17 +216,5 @@ abstract class Object implements ArrayAccess
 		$this->getEntry();
 		return isset($this->entry[$offset]) ? $this->entry[$offset] : null;
 	}
-	
-	static $class = 'Object';
-}
-
-function set_called_class($class)
-{
-	Object::$class = $class;
-}
-
-function get_called_class()
-{
-	return Object::$class;
 }
 ?>
