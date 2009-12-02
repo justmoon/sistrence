@@ -1,6 +1,6 @@
 <?php
 
-class DBConnectionMysqli
+class SisConnectionMysqli
 {
 	private $mysqli;
 	
@@ -24,7 +24,7 @@ class DBConnectionMysqli
 	
 	public function op($table)
 	{
-		return new DBOperationMysqli($table, $this);
+		return new SisOperationMysqli($table, $this);
 	}
 	
 	public function query($sql)
@@ -32,7 +32,7 @@ class DBConnectionMysqli
 		if (!$this->mysqli) $this->connect();
 
 		// in debug mode, we will output all queries launched to the database
-		DB::DEBUG AND DB::debugEcho('SQL Query: '.$sql);
+		Sis::DEBUG AND Sis::debugEcho('SQL Query: '.$sql);
 		
 		// deploy the query, return the result
 		return $this->mysqli->query($sql);
@@ -100,7 +100,7 @@ class DBConnectionMysqli
 		$this->mysqli = new mysqli($this->host, $this->user, $this->password, $this->database);
 		
 		if (!$this->mysqli) {
-			DB::error('Error connecting to MySQL database.', array('db_error' => mysqli_connect_error(), 'db_errno' => mysqli_connect_errno()));
+			Sis::error('Error connecting to MySQL database.', array('db_error' => mysqli_connect_error(), 'db_errno' => mysqli_connect_errno()));
 			return;
 		}
 		
@@ -108,12 +108,12 @@ class DBConnectionMysqli
 	}
 }
 
-class DBOperationMysqli extends DBOperation
+class SisOperationMysqli extends SisOperation
 {
 	private $groupby;
 	
 	/**
-	 * Takes condition parameters, turns them into a DBCondition object and returns it.
+	 * Takes condition parameters, turns them into a SisCondition object and returns it.
 	 */
 	public function cond()
 	{
@@ -124,8 +124,8 @@ class DBOperationMysqli extends DBOperation
 	
 	public function __call($method, $args)
 	{
-		if (DBConditionLibMysqli::isValid($method)) {
-			$cond = new DBConditionMysqli($method, $this, $args);
+		if (SisConditionLibMysqli::isValid($method)) {
+			$cond = new SisConditionMysqli($method, $this, $args);
 			$this->options['conditions'][] = $cond;
 			return $cond;
 		} else {
@@ -141,12 +141,12 @@ class DBOperationMysqli extends DBOperation
 	}
 	
 	/**
-	 * Takes condition parameters as an array, turns them into a jmDBCondition object and saves it.
+	 * Takes condition parameters as an array, turns them into a SisCondition object and saves it.
 	 */
 	private function createCondition($params)
 	{
 		$type = array_shift($params);
-		return new DBConditionMysqli($type, $this, $params);
+		return new SisConditionMysqli($type, $this, $params);
 	}
 	
 	public function sort($by, $order = 1)
@@ -176,7 +176,7 @@ class DBOperationMysqli extends DBOperation
 
 	public function join($second_table)
 	{
-		$join = new DBJoinMysqli($this, $second_table);
+		$join = new SisJoinMysqli($this, $second_table);
 		$this->options['join'][] = $join;
 		return $join;
 	}
@@ -184,7 +184,7 @@ class DBOperationMysqli extends DBOperation
 	public function doSql($sql)
 	{
 		if (!$result = $this->c->query($sql)) {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		} else {
 			return true;
@@ -217,7 +217,7 @@ class DBOperationMysqli extends DBOperation
 		}
 		
 		if (!$result = $this->c->query($query)) {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 		
@@ -252,7 +252,7 @@ class DBOperationMysqli extends DBOperation
 	public function doGetSql($query)
 	{
 		if (!$result = $this->c->query($query)) {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 		
@@ -273,7 +273,7 @@ class DBOperationMysqli extends DBOperation
 	
 	public function doUpdate($data, $fields = false)
 	{
-		if ($data instanceof DBUpdateRuleset) {
+		if ($data instanceof SisUpdateRuleset) {
 			// TODO: well, implement this
 		} elseif (is_array($data)) {
 			$query = 'UPDATE `'.$this->table.'` SET ';
@@ -283,11 +283,11 @@ class DBOperationMysqli extends DBOperation
 			if ($this->c->query($query)) {
 				return true;
 			} else {
-				DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+				Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 				return false;
 			}
 		} else {
-			DB::error('Invalid data for update', array('data' => $data));
+			Sis::error('Invalid data for update', array('data' => $data));
 			return false;
 		}
 	}
@@ -300,7 +300,7 @@ class DBOperationMysqli extends DBOperation
 		if ($this->c->query($query)) {
 			return true;
 		} else {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 	}
@@ -314,7 +314,7 @@ class DBOperationMysqli extends DBOperation
 			$row = $result->fetch_assoc();
 			return $row['count'];
 		} else {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 	}
@@ -325,7 +325,7 @@ class DBOperationMysqli extends DBOperation
 			list($count) = $result->fetch_array();
 			return $count;
 		} else {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 	}
@@ -346,7 +346,7 @@ class DBOperationMysqli extends DBOperation
 		$query = '';
 		if (isset($this->options['conditions']) && !empty($this->options['conditions'])) {
 			$query = ' WHERE ';
-			$master_condition = new DBConditionMysqli('and', $this, $this->options['conditions']);
+			$master_condition = new SisConditionMysqli('and', $this, $this->options['conditions']);
 			$query .= $master_condition->toSql();
 		}
 
@@ -364,11 +364,11 @@ class DBOperationMysqli extends DBOperation
 			if ($this->c->query($query)) {
 				return $this->c->getInsertId();
 			} else {
-				DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+				Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 				return false;
 			}
 		} else {
-			DB::error('Invalid data for insert', array('data' => $data));
+			Sis::error('Invalid data for insert', array('data' => $data));
 			return false;
 		}
 	}
@@ -380,7 +380,7 @@ class DBOperationMysqli extends DBOperation
 		if ($this->c->query($query)) {
 			return true;
 		} else {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 	}
@@ -423,7 +423,7 @@ class DBOperationMysqli extends DBOperation
 	
 	public function field($field)
 	{
-		$field = new DBFieldMysqli($this, $field);
+		$field = new SisFieldMysqli($this, $field);
 		$this->options['field'][] = $field;
 		return $field;
 	}
@@ -439,16 +439,16 @@ class DBOperationMysqli extends DBOperation
 	public function addField($field)
 	{
 		var_dump($field);
-		if ($field instanceof DBField) {
+		if ($field instanceof SisField) {
 			$query = "ALTER TABLE `{$this->table}` ADD ";
 			$query .= $this->createFieldDefinition($field);
 		} elseif (is_array($field)) {
 			$definitions = array();
 			foreach($field as $single_field) {
-				if($single_field instanceof DBField) {
+				if($single_field instanceof SisField) {
 					$definitions[] = $this->createFieldDefinition($single_field);
 				} else {
-					DB::error('Invalid field specification for field creation', array('field' => $single_field));
+					Sis::error('Invalid field specification for field creation', array('field' => $single_field));
 					return false;
 				}
 			}
@@ -456,31 +456,31 @@ class DBOperationMysqli extends DBOperation
 			$query = "ALTER TABLE `{$this->table}` ADD ";
 			$query = implode(", ", $definitions);
 		} else {
-			DB::error('Invalid field specification for field creation', array('field' => $field));
+			Sis::error('Invalid field specification for field creation', array('field' => $field));
 			return false;
 		}
 		
 		if ($this->c->query($query)) {
 			return true;
 		} else {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 	}
 	
 	public function changeField($oldname, $field)
 	{
-		if ($field instanceof DBField) {
+		if ($field instanceof SisField) {
 			$query = "ALTER TABLE `{$this->table}` CHANGE `$oldname` ";
 			$query .= $this->createFieldDefinition($field);
 			if ($this->c->query($query)) {
 				return true;
 			} else {
-				DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+				Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 				return false;
 			}
 		} else {
-			DB::error('Invalid field specification for field modification', array('field' => $field));
+			Sis::error('Invalid field specification for field modification', array('field' => $field));
 			return false;
 		}
 	}
@@ -493,10 +493,10 @@ class DBOperationMysqli extends DBOperation
 		
 		$definitions = array();
 		foreach ($fields as $field) {
-			if ($field instanceof DBField) {
+			if ($field instanceof SisField) {
 				$definitions[] = $this->createFieldDefinition($field);
 			} else {
-				DB::error('Invalid field specification for table creation', array('field' => $field));
+				Sis::error('Invalid field specification for table creation', array('field' => $field));
 				return false;
 			}
 		}
@@ -506,12 +506,12 @@ class DBOperationMysqli extends DBOperation
 		if ($this->c->query($query)) {
 			return true;
 		} else {
-			DB::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
 			return false;
 		}
 	}
 	
-	private function createFieldDefinition(DBField $field)
+	private function createFieldDefinition(SisField $field)
 	{
 		if (empty($field->name) || empty($field->type)) {
 			die('Invalid column name or type');
@@ -563,7 +563,7 @@ class DBOperationMysqli extends DBOperation
 	}
 }
 
-class DBConditionMysqli
+class SisConditionMysqli
 {
 	private $type;
 	private $op;
@@ -571,8 +571,8 @@ class DBConditionMysqli
 	
 	public function __construct($type, $op, $params)
 	{
-		if (!DBConditionLibMysqli::isValid($type)) {
-			DB::error('Invalid condition type!', array('type' => $type));
+		if (!SisConditionLibMysqli::isValid($type)) {
+			Sis::error('Invalid condition type!', array('type' => $type));
 		}
 	
 		$this->type = $type;
@@ -582,11 +582,11 @@ class DBConditionMysqli
 	
 	public function toSql()
 	{
-		return '('.DBConditionLibMysqli::sql($this->type, $this->op, $this->params).')';
+		return '('.SisConditionLibMysqli::sql($this->type, $this->op, $this->params).')';
 	}
 }
 
-class DBConditionLibMysqli
+class SisConditionLibMysqli
 {
 	private static $aliases = array(
 		'and' => 'merge_and',
@@ -705,12 +705,12 @@ class DBConditionLibMysqli
 	}
 }
 
-class DBJoinMysqli extends DBJoin
+class SisJoinMysqli extends SisJoin
 {
 	public function __call($method, $args)
 	{
-		if (DBConditionLibMysqli::isValid($method)) {
-			$cond = new DBConditionMysqli($method, $this, $args);
+		if (SisConditionLibMysqli::isValid($method)) {
+			$cond = new SisConditionMysqli($method, $this, $args);
 			$this->on[] = $cond;
 			return $cond;
 		} elseif (method_exists($this->op, $method)) {
@@ -726,7 +726,7 @@ class DBJoinMysqli extends DBJoin
 		
 		if (count($this->on)) {
 			$sql .= ' ON ';
-			$master_condition = new DBConditionMysqli('and', $this, $this->on);
+			$master_condition = new SisConditionMysqli('and', $this, $this->on);
 			$sql .= $master_condition->toSql();
 		}
 
@@ -739,7 +739,7 @@ class DBJoinMysqli extends DBJoin
 	}
 }
 
-class DBFieldMysqli extends DBField
+class SisFieldMysqli extends SisField
 {
 }
 ?>

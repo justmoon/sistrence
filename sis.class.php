@@ -1,8 +1,27 @@
 <?php
 
-DB::setSharderSingle();
+/**
+ * Sistrence PHP5 database abstraction layer
+ * Copyright (C) 2009 Stefan Thomas aka justmoon
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 
-class DB
+Sis::setSharderSingle();
+
+class Sis
 {
 	// Whether to display debug information (lots of it)
 	const DEBUG = 0;
@@ -33,13 +52,13 @@ class DB
 	{
 		$linkid = count(self::$links);
 		require_once dirname(__FILE__).'/connector/mysqli.php';
-		self::$links[$linkid] = new DBConnectionMysqli($user, $password, $host, $database);
+		self::$links[$linkid] = new SisConnectionMysqli($user, $password, $host, $database);
 		return $linkid;
 	}
 	
 	static public function setSharderSingle()
 	{
-		self::$sharder = new DBSharderSingle();
+		self::$sharder = new SisSharderSingle();
 	}
 	
 	static public function op($table, $linkid = null)
@@ -95,12 +114,12 @@ class DB
 	}
 }
 
-class DBUpdateRuleset
+class SisUpdateRuleset
 {
 	
 }
 
-abstract class DBField
+abstract class SisField
 {
 	// Associated operation
 	protected $op;
@@ -108,7 +127,7 @@ abstract class DBField
 	// Name of the field
 	protected $name = null;
 	
-	public function __construct(DBOperation $op, $fieldName)
+	public function __construct(SisOperation $op, $fieldName)
 	{
 		$this->op = $op;
 		$this->name = $fieldName;
@@ -137,11 +156,11 @@ abstract class DBField
 }
 
 /**
- * This class implements certain features every jmDBOperation object needs
+ * This class implements certain features every SisOperation object needs
  */
-abstract class DBOperation
+abstract class SisOperation
 {
-	// The DBConnection we'll use
+	// The SisConnection we'll use
 	protected $c;
 	
 	// Table to operate on
@@ -181,10 +200,10 @@ abstract class DBOperation
 			return "'".$this->escapeString($value)."'";
 		} elseif ($value === null) {
 			return 'NULL';
-		} elseif ($value instanceof DBField) {
+		} elseif ($value instanceof SisField) {
 			return $value->getFullName();
 		} else {
-			DB::error('Invalid data type!', array('value' => $value));
+			Sis::error('Invalid data type!', array('value' => $value));
 			return false;
 		}
 	}
@@ -195,26 +214,26 @@ abstract class DBOperation
 	}
 }
 
-abstract class DBJoin
+abstract class SisJoin
 {
 	protected $op;
 	protected $table;
 	
 	protected $on = array();
 
-	public function __construct(DBOperation $op, $table)
+	public function __construct(SisOperation $op, $table)
 	{
 		$this->op = $op;
 		$this->table = $table;
 	}
 }
 
-abstract class DBSharder
+abstract class SisSharder
 {
 	abstract public function getLink($table);
 }
 
-class DBSharderSingle extends DBSharder
+class SisSharderSingle extends SisSharder
 {
 	public function getLink($table)
 	{
@@ -222,7 +241,7 @@ class DBSharderSingle extends DBSharder
 	}
 }
 
-class DBUtil
+class SisUtil
 {
 	/**
 	 * Generates a pseudo-random UUID compliant with RFC 4122.

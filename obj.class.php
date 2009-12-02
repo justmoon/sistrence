@@ -1,5 +1,5 @@
 <?php
-require_once('lib/db/set.class.php');
+require_once('sistrence/set.class.php');
 abstract class Object implements ArrayAccess
 {
 	const TABLE = 'no_table_set_check_your_db_object';
@@ -51,7 +51,7 @@ abstract class Object implements ArrayAccess
 	{
 		$class = get_called_class();
 		
-		$op = DB::op(constant($class.'::TABLE'));
+		$op = Sis::op(constant($class.'::TABLE'));
 		$op->eq($field, $value);
 		$entry = $op->doGetOne();
 		
@@ -62,7 +62,7 @@ abstract class Object implements ArrayAccess
 	{
 		$class = get_called_class();
 		
-		$op = DB::op(constant($class.'::TABLE'));
+		$op = Sis::op(constant($class.'::TABLE'));
 		$id = $op->doInsert($data);
 		
 		// Add id to data
@@ -96,7 +96,7 @@ abstract class Object implements ArrayAccess
 	public function getOp()
 	{
 		if (isset($this)) {
-			$op = DB::op(constant(get_class($this).'::TABLE'));
+			$op = Sis::op(constant(get_class($this).'::TABLE'));
 			$op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
 		
 			if ($this->customFields !== null) {
@@ -104,7 +104,7 @@ abstract class Object implements ArrayAccess
 			}
 		} else {
 			$class = get_called_class();
-			$op = DB::op(constant($class.'::TABLE'));
+			$op = Sis::op(constant($class.'::TABLE'));
 		}
 		
 		return $op;
