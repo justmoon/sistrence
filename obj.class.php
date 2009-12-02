@@ -92,7 +92,7 @@ abstract class SisObject implements ArrayAccess
 	public function getOp()
 	{
 		$op = Sis::op(constant(get_class($this).'::TABLE'));
-		$op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
+		if ($this->id !== null) $op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
 	
 		if ($this->customFields !== null) {
 			call_user_func(array($op, 'fields'), implode(', ', $this->customFields));
