@@ -1,0 +1,4 @@
+What is Sistrence?
+------------------
+
+Sistrence is a database abstraction library for PHP5. I've been using it in dozens of projects under the name "jmDB" for about six years now. It's fairly stable and it's got a few neat features, so I'm releasing it as open-source at this time.
