@@ -1,6 +1,6 @@
 <?php
 require_once('sistrence/set.class.php');
-abstract class Object implements ArrayAccess
+abstract class SisObject implements ArrayAccess
 {
 	const TABLE = 'no_table_set_check_your_db_object';
 	const ID_FIELD = 'id';

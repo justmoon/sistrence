@@ -2,7 +2,7 @@
 /**
  * Represents a list of database results.
  */
-class Set extends ArrayObject
+class SisSet extends ArrayObject
 {
 	public function __call($name, $args)
 	{
