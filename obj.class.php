@@ -111,6 +111,14 @@ abstract class Object implements ArrayAccess
 	}
 	
 	/**
+	 * Delete this object from the database.
+	 */
+	public function delete()
+	{
+		$this->getOp()->doDelete();
+	}
+	
+	/**
 	 * Temporary cache for fields that are going to be updated.
 	 */
 	protected $update;
