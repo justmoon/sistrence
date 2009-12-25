@@ -124,13 +124,33 @@ class SisOperationMysqli extends SisOperation
 	
 	public function __call($method, $args)
 	{
-		if (SisConditionLibMysqli::isValid($method)) {
+		if (SisConditionMysqli::isValid($method)) {
 			$cond = new SisConditionMysqli($method, $this, $args);
 			$this->options['conditions'][] = $cond;
 			return $cond;
 		} else {
 			trigger_error(sprintf('Call to undefined function: %s::%s()', get_class($this), $method), E_USER_ERROR);
 		}
+	}
+	
+	/**
+	 * Drop a condition.
+	 *
+	 * Will look through the condition starting at the end and drop the first
+	 * one that matches the parameter.
+	 *
+	 * Returns true if the condition was found.
+	 */
+	public function dropCond(SisConditionMysqli $doomedCond)
+	{
+		$cond = end($this->options['conditions']);
+		do {
+			if ($cond === $doomedCond) {
+				unset($this->options['conditions'][key($this->options['conditions'])]);
+				return true;
+			}
+		} while (($cond = prev($this->options['conditions'])) !== false);
+		return false;
 	}
 	
 	public function eqAll($data)
@@ -571,26 +591,37 @@ class SisConditionMysqli
 	
 	public function __construct($type, $op, $params)
 	{
-		if (!SisConditionLibMysqli::isValid($type)) {
+		if (!self::isValid($type)) {
 			Sis::error('Invalid condition type!', array('type' => $type));
 		}
 	
-		$this->type = $type;
+		$this->type = self::resolveAliases($type);
 		$this->op = $op;
 		$this->params = $params;
+		
+		// some conditions need preparation
+		$method = 'prepare_'.$this->type;
+		
+		if (method_exists(__CLASS__, $method)) {
+			self::$method($this->op, $this->params);
+		}
 	}
 	
 	public function toSql()
 	{
-		return '('.SisConditionLibMysqli::sql($this->type, $this->op, $this->params).')';
+		$method = 'sql_'.$this->type;
+		
+		return '('.self::$method($this->op, $this->params).')';
 	}
-}
-
-class SisConditionLibMysqli
-{
+	
+	////////////////////////////////////////////////////////////////////////////
+	// BEGIN Condition Library
+	
 	private static $aliases = array(
 		'and' => 'merge_and',
 		'or' => 'merge_or',
+		
+		'not' => 'bool_not',
 		
 		'eq' => 'field_equals',
 		'ne' => 'field_nequals',
@@ -613,20 +644,34 @@ class SisConditionLibMysqli
 	static public function isValid($type)
 	{
 		$type = strtolower($type);
-		return method_exists(__CLASS__, $type) || isset(self::$aliases[$type]);
+		return method_exists(__CLASS__, 'sql_'.$type) || isset(self::$aliases[$type]);
 	}
 	
-	static public function sql($type, $op, $params)
+	static public function resolveAliases($type)
 	{
 		$type = strtolower($type);
 		if (isset(self::$aliases[$type])) {
 			$type = self::$aliases[$type];
 		}
-		
-		return self::$type($op, $params);
+		return $type;
+	}
+	
+	static private function prepare_merge_or($op, $params)
+	{
+		self::util_filter_subconditions($op, $params);
+	}
+	
+	static private function prepare_merge_and($op, $params)
+	{
+		self::util_filter_subconditions($op, $params);
+	}
+	
+	static private function prepare_bool_not($op, $params)
+	{
+		self::util_filter_subconditions($op, $params);
 	}
 
-	static private function merge_and($op, $params)
+	static private function sql_merge_and($op, $params)
 	{
 		$sqls = array();
 		foreach($params as $param) {
@@ -635,7 +680,7 @@ class SisConditionLibMysqli
 		return implode(' AND ', $sqls);
 	}
 	
-	static private function merge_or($op, $params)
+	static private function sql_merge_or($op, $params)
 	{
 		$sqls = array();
 		foreach($params as $param) {
@@ -643,65 +688,78 @@ class SisConditionLibMysqli
 		}
 		return implode(' OR ', $sqls);
 	}
+	
+	static private function sql_bool_not($op, $params)
+	{
+		return '!'.$params[0]->toSql();
+	}
 				
-	static private function field_equals($op, $params)
+	static private function sql_field_equals($op, $params)
 	{
 		$value = $op->prepareValue($params[1]);
 		return $op->prepareField($params[0]).' = '.$value;
 	}
 	
-	static private function field_nequals($op, $params)
+	static private function sql_field_nequals($op, $params)
 	{
 		$value = $op->prepareValue($params[1]);
 		return $op->prepareField($params[0]).' != '.$value;
 	}
 	
-	static private function field_contains($op, $params)
+	static private function sql_field_contains($op, $params)
 	{
 		$value = "'%".addslashes((string)$params[1])."%'";
 		return $op->prepareField($params[0]).' LIKE '.$value;
 	}
 			
-	static private function field_starts($op, $params)
+	static private function sql_field_starts($op, $params)
 	{
 		$value = "'".addslashes((string)$params[1])."%'";
 		return $op->prepareField($params[0]).' LIKE '.$value;
 	}
 	
-	static private function field_ends($op, $params)
+	static private function sql_field_ends($op, $params)
 	{
 		$value = "'%".addslashes((string)$params[1])."'";
 		return $op->prepareField($params[0]).' LIKE '.$value;
 	}
 	
-	static private function field_greater($op, $params)
+	static private function sql_field_greater($op, $params)
 	{
 		return $op->prepareField($params[0]).' > '.$op->prepareValue($params[1]);
 	}
 	
-	static private function field_greater_or_equal($op, $params)
+	static private function sql_field_greater_or_equal($op, $params)
 	{
 		return $op->prepareField($params[0]).' >= '.$op->prepareValue($params[1]);
 	}
 		
-	static private function field_less($op, $params)
+	static private function sql_field_less($op, $params)
 	{
 		return $op->prepareField($params[0]).' < '.$op->prepareValue($params[1]);
 	}
 		
-	static private function field_less_or_equal($op, $params)
+	static private function sql_field_less_or_equal($op, $params)
 	{
 		return $op->prepareField($params[0]).' <= '.$op->prepareValue($params[1]);
 	}
 		
-	static private function isnull($op, $params)
+	static private function sql_isnull($op, $params)
 	{
 		return $op->prepareField($params[0]).' IS NULL';
 	}
 		
-	static private function notnull($op, $params)
+	static private function sql_notnull($op, $params)
 	{
 		return $op->prepareField($params[0]).' IS NOT NULL';
+	}
+	
+	static private function util_filter_subconditions($op, $conds)
+	{
+		$cond = end($conds);
+		do {
+			$op->dropCond($cond);
+		} while (($cond = prev($conds)) !== false);
 	}
 }
 
@@ -709,7 +767,7 @@ class SisJoinMysqli extends SisJoin
 {
 	public function __call($method, $args)
 	{
-		if (SisConditionLibMysqli::isValid($method)) {
+		if (SisConditionMysqli::isValid($method)) {
 			$cond = new SisConditionMysqli($method, $this, $args);
 			$this->on[] = $cond;
 			return $cond;
