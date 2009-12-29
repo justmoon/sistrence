@@ -106,6 +106,8 @@ abstract class SisObject implements ArrayAccess
 	 */
 	public function delete()
 	{
+		if ($this->id === null) trigger_error('SisObject::delete() can only delete individual objects.');
+	
 		$this->getOp()->doDelete();
 	}
 	
