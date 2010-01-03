@@ -393,6 +393,15 @@ class SisOperationMysqli extends SisOperation
 		}
 	}
 	
+	public function doUpdateOrInsert($data, $fields = false)
+	{
+		if ($this->doCount()) {
+			$this->doUpdate($data, $fields);
+		} else {
+			$this->doInsert($data, $fields);
+		}
+	}
+	
 	public function doTruncate()
 	{
 		$query = 'TRUNCATE '.$this->table;
