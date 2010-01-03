@@ -117,6 +117,11 @@ abstract class SisObject implements ArrayAccess
 	protected $update;
 	
 	/**
+	 * Whether to commit changes to the database (or just to the local array.)
+	 */
+	protected $remoteCommit = true;
+	
+	/**
 	 * Start an update for multiple fields at once.
 	 */
 	public function startUpdate()
@@ -135,8 +140,10 @@ abstract class SisObject implements ArrayAccess
 		}
 		
 		// Commit changes to database
-		$op = $this->getOp();
-		$result = $op->doUpdate($this->update);
+		if ($this->remoteCommit) {
+			$op = $this->getOp();
+			$result = $op->doUpdate($this->update);
+		}
 		
 		// And to active data
 		$this->localCommit();
@@ -156,6 +163,14 @@ abstract class SisObject implements ArrayAccess
 		
 		$this->entry = array_merge($this->entry, $this->update);
 		$this->update = null;
+	}
+	
+	/**
+	 * Changes the remote commit setting for this object.
+	 */
+	public function setRemoteCommit($bool)
+	{
+		$this->remoteCommit = $bool;
 	}
 	
 	/**
@@ -197,7 +212,7 @@ abstract class SisObject implements ArrayAccess
 			$this->update[$offset] = $value;
 		} else {
 			$op = $this->getOp();
-			$op->doUpdate(array($offset => $value));
+			if ($this->remoteCommit) $op->doUpdate(array($offset => $value));
 			$this->entry[$offset] = $value;
 		}
 	}
