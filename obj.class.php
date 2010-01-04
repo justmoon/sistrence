@@ -142,7 +142,13 @@ abstract class SisObject implements ArrayAccess
 		// Commit changes to database
 		if ($this->remoteCommit) {
 			$op = $this->getOp();
-			$result = $op->doUpdate($this->update);
+			$idField = constant($class.'::ID_FIELD');
+			$result = $op->doUpdateOrInsert(
+				// Gather the ID and the new field
+				array($idField => $this->id, $offset => $value),
+				// On updates only update the new field (not the ID field)
+				array($offset)
+			);
 		}
 		
 		// And to active data
@@ -211,9 +217,8 @@ abstract class SisObject implements ArrayAccess
 		if (is_array($this->update)) {
 			$this->update[$offset] = $value;
 		} else {
-			$op = $this->getOp();
-			if ($this->remoteCommit) $op->doUpdate(array($offset => $value));
-			$this->entry[$offset] = $value;
+			$this->update = array($offset => $value);
+			$this->commit();
 		}
 	}
 	

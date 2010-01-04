@@ -393,12 +393,12 @@ class SisOperationMysqli extends SisOperation
 		}
 	}
 	
-	public function doUpdateOrInsert($data, $fields = false)
+	public function doUpdateOrInsert($data, $updateFields = false, $insertFields = false)
 	{
 		if ($this->doCount()) {
-			$this->doUpdate($data, $fields);
+			$this->doUpdate($data, $updateFields);
 		} else {
-			$this->doInsert($data, $fields);
+			$this->doInsert($data, $insertFields);
 		}
 	}
 	
