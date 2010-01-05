@@ -141,13 +141,20 @@ abstract class SisObject implements ArrayAccess
 		
 		// Commit changes to database
 		if ($this->remoteCommit) {
+			// Get the data and fields to update
+			$data = $this->update;
+			$fields = array_keys($data);
+			
+			// Add the ID field in case we need to create the row
+			$idField = constant(get_class($this).'::ID_FIELD');
+			$data[$idField] = $this->id;
+			
 			$op = $this->getOp();
-			$idField = constant($class.'::ID_FIELD');
 			$result = $op->doUpdateOrInsert(
-				// Gather the ID and the new field
-				array($idField => $this->id, $offset => $value),
-				// On updates only update the new field (not the ID field)
-				array($offset)
+				// This array contains the new data and the ID field
+				$data,
+				// But on updates we only use the new data (not the ID field)
+				$fields
 			);
 		}
 		
