@@ -366,8 +366,11 @@ class SisOperationMysqli extends SisOperation
 		$query = '';
 		if (isset($this->options['conditions']) && !empty($this->options['conditions'])) {
 			$query = ' WHERE ';
-			$master_condition = new SisConditionMysqli('and', $this, $this->options['conditions']);
-			$query .= $master_condition->toSql();
+			$sqls = array();
+			foreach($this->options['conditions']  as $param) {
+				$sqls[] = $param->toSql();
+			}
+			$query .= implode(' AND ', $sqls);
 		}
 
 		if (isset($this->options['groupby']) && !empty($this->options['groupby']))
