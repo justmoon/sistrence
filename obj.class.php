@@ -101,6 +101,21 @@ abstract class SisObject implements ArrayAccess
 		return $op;
 	}
 	
+	public function getRowOp()
+	{
+		$op = Sis::op(constant(get_class($this).'::TABLE'));
+		if ($this->id !== null) {
+			if (get_class($this) == 'Page') echo 'ID FIELD MARKED';
+			$op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
+		} else trigger_error('Cannot create row op: Object has no ID', E_USER_ERROR);
+	
+		if ($this->customFields !== null) {
+			call_user_func(array($op, 'fields'), implode(', ', $this->customFields));
+		}
+		
+		return $op;
+	}	
+	
 	/**
 	 * Delete this object from the database.
 	 */
@@ -139,6 +154,11 @@ abstract class SisObject implements ArrayAccess
 			return false;
 		}
 		
+		if ($this->id === null) {
+			trigger_error('Cannot commit: Object has no ID', E_USER_WARNING);
+			return false;
+		}
+		
 		// Commit changes to database
 		if ($this->remoteCommit) {
 			// Get the data and fields to update
@@ -149,7 +169,7 @@ abstract class SisObject implements ArrayAccess
 			$idField = constant(get_class($this).'::ID_FIELD');
 			$data[$idField] = $this->id;
 			
-			$op = $this->getOp();
+			$op = $this->getRowOp();
 			$result = $op->doUpdateOrInsert(
 				// This array contains the new data and the ID field
 				$data,
