@@ -221,7 +221,7 @@ abstract class SisObject implements ArrayAccess
     		return new $class($array[$idField], $array);
 		} elseif (isset($array[0][$idField])) {
 			return array_map(array($this, 'objectify'), $array);
-		} elseif (get_class($array) == $class) {
+		} elseif (@get_class($array) == $class) {
 			// Work is already done...
 			return $array;
 		} elseif ($array === false) {
