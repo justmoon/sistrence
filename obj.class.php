@@ -105,7 +105,6 @@ abstract class SisObject implements ArrayAccess
 	{
 		$op = Sis::op(constant(get_class($this).'::TABLE'));
 		if ($this->id !== null) {
-			if (get_class($this) == 'Page') echo 'ID FIELD MARKED';
 			$op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
 		} else trigger_error('Cannot create row op: Object has no ID', E_USER_ERROR);
 	
