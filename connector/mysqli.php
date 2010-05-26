@@ -424,9 +424,9 @@ class SisOperationMysqli extends SisOperation
 		if (is_array($fields)) {
 			foreach ($fields as $field) {
 				if (isset($data[$field])) {
-					if (!$value = $this->prepareValue($data[$field])) {
-						return false;
-					}
+					$value = $this->prepareValue($data[$field]);
+					if ($value === false) return false;
+					
 					$string .= ', `'.addslashes($field).'`='.$value;
 				} else {
 					// just ignore this case
