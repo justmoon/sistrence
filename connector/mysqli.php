@@ -81,6 +81,13 @@ class SisConnectionMysqli
 		return $this->mysqli->insert_id;
 	}
 	
+	public function getAffectedRows()
+	{
+		if (!$this->mysqli) return 0;
+		
+		return $this->mysqli->affected_rows;
+	}
+	
 	public function getMysqli()
 	{
 		if (!$this->mysqli) $this->connect();
@@ -424,9 +431,9 @@ class SisOperationMysqli extends SisOperation
 		if (is_array($fields)) {
 			foreach ($fields as $field) {
 				if (isset($data[$field])) {
-					$value = $this->prepareValue($data[$field]);
-					if ($value === false) return false;
-					
+					if (!$value = $this->prepareValue($data[$field])) {
+						return false;
+					}
 					$string .= ', `'.addslashes($field).'`='.$value;
 				} else {
 					// just ignore this case
@@ -587,6 +594,11 @@ class SisOperationMysqli extends SisOperation
 	public function getInsertId()
 	{
 		return $this->c->getInsertId();
+	}
+
+	public function getAffectedRows()
+	{
+		return $this->c->getAffectedRows();
 	}
 	
 	public function prepareField($field)
