@@ -29,13 +29,13 @@ abstract class SisObject implements ArrayAccess
 		$this->entry = $op->doGetOne();
 		
 		if ($this->entry === null) {
-			trigger_error('Database error while getting entry for table '.constant(get_class($this).'::TABLE').' with &rsquo;'.constant(get_class($this).'::ID_FIELD').'&rsquo; = '.var_export($this->id, true), E_USER_WARNING);
+			trigger_error('Database error while getting entry for table '.$this::TABLE.' with &rsquo;'.$this::ID_FIELD.'&rsquo; = '.var_export($this->id, true), E_USER_WARNING);
 			$this->entry = array();
 			return false;
 		}
 	
 		if ($this->entry === false) {
-			trigger_error('Entry for table '.constant(get_class($this).'::TABLE').' with &rsquo;'.constant(get_class($this).'::ID_FIELD').'&rsquo; = '.var_export($this->id, true).' not found', E_USER_WARNING);
+			trigger_error('Entry for table '.$this::TABLE.' with &rsquo;'.$this::ID_FIELD.'&rsquo; = '.var_export($this->id, true).' not found', E_USER_WARNING);
 			$this->entry = array();
 			return false;
 		}
@@ -43,34 +43,34 @@ abstract class SisObject implements ArrayAccess
 		return $this->entry;
 	}
 	
-	public function getBy($field, $value)
+	static public function getBy($field, $value)
 	{
-		$class = get_class($this);
+		$class = get_called_class();
 		
-		$op = Sis::op(constant($class.'::TABLE'));
+		$op = Sis::op($class::TABLE);
 		$op->eq($field, $value);
 		$entry = $op->doGetOne();
 		
 		return self::objectify($entry);
 	}
 
-	public function getAll()
+	static public function getAll()
 	{
-		$class = get_class($this);
+		$class = get_called_class();
 		
-		$op = Sis::op(constant($class.'::TABLE'));
+		$op = Sis::op($class::TABLE);
 		return self::objectify($op->doGet());
 	}
 	
-	public function create($data)
+	static public function create($data)
 	{
-		$class = get_class($this);
+		$class = get_called_class();
 		
-		$op = Sis::op(constant($class.'::TABLE'));
+		$op = Sis::op($class::TABLE);
 		$id = $op->doInsert($data);
 		
 		// Add id to data
-		$data[constant($class.'::ID_FIELD')] = $id;
+		$data[$class::ID_FIELD] = $id;
 		
 		return self::objectify($data);
 	}
@@ -95,12 +95,21 @@ abstract class SisObject implements ArrayAccess
 	}
 	
 	/**
+	 * Returns a database operation for this object's table.
+	 */
+	static public function op()
+	{
+		$class = get_called_class();
+		return Sis::op($class::TABLE);
+	}
+	
+	/**
 	 * Returns a database operation, prepped and ready to go.
 	 */
 	public function getOp()
 	{
-		$op = Sis::op(constant(get_class($this).'::TABLE'));
-		if ($this->id !== null) $op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
+		$op = Sis::op($this::TABLE);
+		if ($this->id !== null) $op->eq($this::ID_FIELD, $this->id);
 	
 		if ($this->customFields !== null) {
 			call_user_func(array($op, 'fields'), implode(', ', $this->customFields));
@@ -111,9 +120,9 @@ abstract class SisObject implements ArrayAccess
 	
 	public function getRowOp()
 	{
-		$op = Sis::op(constant(get_class($this).'::TABLE'));
+		$op = Sis::op($this::TABLE);
 		if ($this->id !== null) {
-			$op->eq(constant(get_class($this).'::ID_FIELD'), $this->id);
+			$op->eq($this::ID_FIELD, $this->id);
 		} else trigger_error('Cannot create row op: Object has no ID', E_USER_ERROR);
 	
 		if ($this->customFields !== null) {
@@ -173,7 +182,7 @@ abstract class SisObject implements ArrayAccess
 			$fields = array_keys($data);
 			
 			// Add the ID field in case we need to create the row
-			$idField = constant(get_class($this).'::ID_FIELD');
+			$idField = $this::ID_FIELD;
 			$data[$idField] = $this->id;
 			
 			$op = $this->getRowOp();
@@ -218,21 +227,22 @@ abstract class SisObject implements ArrayAccess
 	 * 
 	 * You can either pass a single array or an array of arrays.
 	 */
-	public function objectify($array)
+	static public function objectify($array)
 	{
-		$class = get_class($this);
+		$class = get_called_class();
 		
-		// TODO: PHP 5.3: Replace "constant($class.'::ID_FIELD')" by $class::ID_FIELD;
-		$idField = constant($class.'::ID_FIELD');
-		if (isset($array[$idField])) {
+		$idField = $class::ID_FIELD;
+		if (is_array($array) && isset($array[$idField])) {
     		return new $class($array[$idField], $array);
-		} elseif (isset($array[0][$idField])) {
-			return array_map(array($this, 'objectify'), $array);
+		} elseif (is_array($array) && isset($array[0][$idField])) {
+			return array_map(array($class, 'objectify'), $array);
 		} elseif (@get_class($array) == $class) {
 			// Work is already done...
 			return $array;
 		} elseif ($array === false) {
 			return false;
+		} elseif (is_numeric($array) && ((int) $array) == $array) {
+			return new $class($array);
 		} elseif (!is_array($array)) {
 			trigger_error('Invalid value for objectification', E_USER_WARNING);
 			return $array;
