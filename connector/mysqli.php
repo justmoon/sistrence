@@ -178,7 +178,7 @@ class SisOperationMysqli extends SisOperation
 	
 	public function sort($by, $order = 1)
 	{
-		$this->options['sort'] = array($by, $order);
+		$this->options['sort'][] = array($by, $order);
 	}
 	
 	public function randomize()
@@ -233,8 +233,13 @@ class SisOperationMysqli extends SisOperation
 			if ($sort == 'randomize') {
 				$query .= " ORDER BY RAND()";
 			} else {
-				$sort[1] = ($sort[1] == -1) ? 'DESC' : 'ASC';
-				$query .= " ORDER BY `{$sort[0]}` {$sort[1]}";
+				$sortClauses = array();
+				foreach ($sort as $sortEntry) {
+					$sortClauses[] = '`'.$sortEntry[0].'` '.(($sortEntry[1] == -1) ? 'DESC' : 'ASC');
+				}
+				if (count($sortClauses)) {
+					$query .= ' ORDER BY '.implode(', ', $sortClauses);
+				}
 			}
 		}
 		
