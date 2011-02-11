@@ -628,6 +628,26 @@ class SisConditionMysqli
 		$this->type = self::resolveAliases($type);
 		$this->op = $op;
 		$this->params = $params;
+
+		// Operations starting with "field" accept an array shorthand for
+		// operating on multiple fields.
+		if (substr($this->type, 0, 6) == 'field_' && is_array($params[0])) {
+
+			$subConds = array();
+			foreach ($params[0] as $fieldName => $value) {
+				$subConds[] = new SisConditionMysqli($this->type, $op,
+				                                     array($fieldName, $value));
+			}
+			
+			$this->type = 'merge_and';
+			$this->op = $op;
+			$this->params = $subConds;
+
+			// This is an optimization - we skip prepare_merge_and because
+			// we already know our subconditions are not registered with
+			// the operation object.
+			return;
+		}
 		
 		// some conditions need preparation
 		$method = 'prepare_'.$this->type;
