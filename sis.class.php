@@ -56,6 +56,17 @@ class Sis
 		return $linkid;
 	}
 	
+	/**
+	 * Connects to a MongoDB-compatible database.
+	 */
+	static public function connectMongo($database = 'default', $server = 'mongodb://localhost:27017', $options = array())
+	{
+		$linkid = count(self::$links);
+		require_once dirname(__FILE__).'/connector/mongodb.php';
+		self::$links[$linkid] = new SisConnectionMongo($database, $server, $options);
+		return $linkid;
+	}
+	
 	static public function setSharderSingle()
 	{
 		self::$sharder = new SisSharderSingle();
