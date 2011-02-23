@@ -689,6 +689,8 @@ class SisConditionMysqli
 		'field_bigger_or_equal' => 'field_greater_or_equal',
 		'field_smaller' => 'field_less',
 		'field_smaller_or_equal' => 'field_less_or_equal',
+		
+		'regexp' => 'field_regexp'
 	);
 	
 	static public function isValid($type)
@@ -792,6 +794,11 @@ class SisConditionMysqli
 	static private function sql_field_less_or_equal($op, $params)
 	{
 		return $op->prepareField($params[0]).' <= '.$op->prepareValue($params[1]);
+	}
+		
+	static private function sql_field_regexp($op, $params)
+	{
+		return $op->prepareField($params[0]).' REGEXP '.$op->prepareValue($params[1]);
 	}
 		
 	static private function sql_isnull($op, $params)
