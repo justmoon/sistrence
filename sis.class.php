@@ -275,9 +275,9 @@ class SisUtil
 	{
 		$result = ''; $len = $length;
 		do {
-			$rs = base_convert(mt_rand(0, 0x81bf0fff), 10, 36);
+			$rs = base_convert(mt_rand(0, 0x39aa3ff), 10, 36);
 			$result .= $rs;
-		} while (($len -= 6) > 0);
+		} while (($len -= 5) > 0);
 		
 		return strtoupper(substr($result, 0, $length));
 	}
