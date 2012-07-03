@@ -678,6 +678,7 @@ class SisConditionMysqli
 		'contains' =>'field_contains',
 		'starts' => 'field_starts',
 		'ends' => 'field_ends',
+    'like' => 'field_like',
 		'gt' =>'field_greater',
 		'lt' =>'field_less',
 		'gtoe' => 'field_greater_or_equal',
@@ -745,7 +746,7 @@ class SisConditionMysqli
 	{
 		return '!'.$params[0]->toSql();
 	}
-				
+
 	static private function sql_field_equals($op, $params)
 	{
 		$value = $op->prepareValue($params[1]);
@@ -774,6 +775,21 @@ class SisConditionMysqli
 	{
 		$value = "'%".addslashes((string)$params[1])."'";
 		return $op->prepareField($params[0]).' LIKE '.$value;
+	}
+  
+	static private function sql_field_like($op, $params)
+	{
+		$value = $op->prepareValue($params[1]);
+		$sql = $op->prepareField($params[0]).' LIKE '.$value;
+
+    // If LIKE escape character given
+    if (count($params) >= 3 &&
+        is_string($params[2]) &&
+        strlen($params[2]) == 1) {
+      $sql .= ' ESCAPE '.$op->prepareValue($params[2]);
+    }
+
+    return $sql;
 	}
 	
 	static private function sql_field_greater($op, $params)
