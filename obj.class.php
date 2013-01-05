@@ -9,6 +9,8 @@ abstract class SisObject implements ArrayAccess
 	protected $id;
 	private $entry;
 
+	public $ignore_missing = false;
+
 	public function __construct($id = null, $entry = null)
 	{
 		$this->id = $id;
@@ -23,7 +25,7 @@ abstract class SisObject implements ArrayAccess
 	public function getEntry()
 	{
 		if ($this->entry !== null) {
-			 return $this->entry;
+			return $this->entry;
 		}
 
 		$op = $this->getOp();
@@ -36,9 +38,11 @@ abstract class SisObject implements ArrayAccess
 		}
 
 		if ($this->entry === false) {
-			trigger_error('Entry for table '.$this::TABLE.' with &rsquo;'.$this::ID_FIELD.'&rsquo; = '.var_export($this->id, true).' not found', E_USER_WARNING);
+			if (!$this->ignore_missing) {
+				trigger_error('Entry for table '.$this::TABLE.' with &rsquo;'.$this::ID_FIELD.'&rsquo; = '.var_export($this->id, true).' not found', E_USER_WARNING);
+				return false;
+			}
 			$this->entry = array();
-			return false;
 		}
 
 		return $this->entry;
