@@ -33,9 +33,28 @@ class SisConnectionMysqli
 
 		// in debug mode, we will output all queries launched to the database
 		Sis::DEBUG AND Sis::debugEcho('SQL Query: '.$sql);
-		
+
 		// deploy the query, return the result
 		return $this->mysqli->query($sql);
+	}
+
+	public function queryMulti($sql)
+	{
+		if (!$this->mysqli) $this->connect();
+
+		if (is_array($sql)) $sql = implode(PHP_EOL, $sql);
+
+		// in debug mode, we will output all queries launched to the database
+		Sis::DEBUG AND Sis::debugEcho('SQL Multi Query: '.$sql);
+
+		// deploy the query
+		$result = $this->mysqli->multi_query($sql);
+
+		if (!$result) return false;
+
+		while ($this->mysqli->next_result()) {}
+
+		return true;
 	}
 	
 	public function ping()
@@ -208,10 +227,20 @@ class SisOperationMysqli extends SisOperation
 		return $join;
 	}
 	
-	public function doSql($sql)
+	public function doSql($sql, $with_result = false)
 	{
 		if (!$result = $this->c->query($sql)) {
-			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $query)));
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $sql)));
+			return false;
+		} else {
+			return $with_result ? new SisResultMysqli($result) : true;
+		}
+	}
+
+	public function doSqlMulti($sql)
+	{
+		if (!$this->c->queryMulti($sql)) {
+			Sis::error('Invalid MySQL-Query!', $this->c->getDebugInfo(array('query' => $sql)));
 			return false;
 		} else {
 			return true;
@@ -872,5 +901,24 @@ class SisJoinMysqli extends SisJoin
 
 class SisFieldMysqli extends SisField
 {
+}
+
+class SisResultMysqli
+{
+  protected $result;
+
+  public function __construct(mysqli_result $result)
+  {
+    $this->result = $result;
+  }
+
+  public function fetchAllSingle()
+  {
+    $values = array();
+    while (list($val) = $this->result->fetch_row()) {
+      $values[] = $val;
+    }
+    return $values;
+  }
 }
 ?>
