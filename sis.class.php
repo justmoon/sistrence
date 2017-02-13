@@ -25,10 +25,10 @@ class Sis
 {
 	// Whether to display debug information (lots of it)
 	const DEBUG = 0;
-	
+
 	// Version
 	const VERSION = '4.0';
-	
+
 	// Field types
 	const FT_BOOL    = 10;
 	const FT_INT     = 11;
@@ -38,13 +38,13 @@ class Sis
 	const FT_VARCHAR = 31;
 	const FT_TEXT    = 32;
 	const FT_AUTOKEY = 50;
-	
+
 	// List of open database links
 	static private $links = array();
-	
+
 	// Selects a database link based on the requested table
 	static private $sharder;
-	
+
 	/**
 	 * Connects to a MySQL-compatible database.
 	 */
@@ -55,7 +55,7 @@ class Sis
 		self::$links[$linkid] = new SisConnectionMysqli($user, $password, $host, $database);
 		return $linkid;
 	}
-	
+
 	/**
 	 * Connects to a MongoDB-compatible database.
 	 */
@@ -66,38 +66,38 @@ class Sis
 		self::$links[$linkid] = new SisConnectionMongo($database, $server, $options);
 		return $linkid;
 	}
-	
+
 	static public function setSharderSingle()
 	{
 		self::$sharder = new SisSharderSingle();
 	}
-	
+
 	static public function op($table, $linkid = null)
 	{
 		if ($linkid === null) $linkid = self::$sharder->getLink($table);
-		
+
 		if (!isset(self::$links[$linkid])) {
 			self::error('Can\'t prepare database op - invalid link id "'.$linkid.'"', array('linklist' => self::$links));
 			return false;
 		}
-		
+
 		return self::$links[$linkid]->op($table);
 	}
-	
+
 	static public function getLink($linkid)
 	{
 		if (!isset(self::$links[$linkid])) {
 			self::error('Can\'t find database link - invalid link id "'.$linkid.'"', array('linklist' => self::$links));
 			return false;
 		}
-		
+
 		return self::$links[$linkid];
 	}
-	
+
 	static public function error($error, $debug)
 	{
 		$de = ini_get('display_errors');
-		
+
 		if ($de === 'On' || $de == 1) {
 			echo '<br />'."\r\n";
 			echo '<b>Database Error</b>:  '.$error."<br/>\r\n";
@@ -108,14 +108,14 @@ class Sis
 			echo '<br />';
 		}
 	}
-	
+
 	static public function dumpLinklist()
 	{
 		print("<pre>\n");
 		print_r(self::$links);
 		print("</pre>\n");
 	}
-	
+
 	static public function debugEcho($text)
 	{
 		if (self::DEBUG) {
@@ -127,7 +127,7 @@ class Sis
 
 class SisUpdateRuleset
 {
-	
+
 }
 
 abstract class SisField
@@ -137,30 +137,30 @@ abstract class SisField
 
 	// Name of the field
 	protected $name = null;
-	
+
 	public function __construct(SisOperation $op, $fieldName)
 	{
 		$this->op = $op;
 		$this->name = $fieldName;
 	}
-	
+
 	public function getName()
 	{
 		return $this->name;
 	}
-	
+
 	public function getFullName()
 	{
 		return '`'.$this->op->getTable() . '`.`' . $this->name . '`';
 	}
-	
+
 	/*
 	// data type
 	public $type = null;
-	
+
 	// the (maximum) size
 	public $size = 8;
-	
+
 	// default value for the column
 	public $default = '';
 	*/
@@ -173,30 +173,30 @@ abstract class SisOperation
 {
 	// The SisConnection we'll use
 	protected $c;
-	
+
 	// Table to operate on
 	protected $table;
-	
+
 	// Options for operation
 	protected $options = array();
-	
+
 	public function __construct($table, $c)
 	{
 		$this->c = $c;
 		$this->table = $table;
 	}
-	
+
 	public function __destruct()
 	{
 		unset($this->c);
 		unset($this->options);
 	}
-	
+
 	public function getTable()
 	{
 		return $this->table;
 	}
-	
+
 	public function prepareValue($value)
 	{
 		if (is_bool($value)) {
@@ -218,7 +218,7 @@ abstract class SisOperation
 			return false;
 		}
 	}
-	
+
 	public function escapeString($string)
 	{
 		return $this->c->escapeString($string);
@@ -229,7 +229,7 @@ abstract class SisJoin
 {
 	protected $op;
 	protected $table;
-	
+
 	protected $on = array();
 
 	public function __construct(SisOperation $op, $table)
@@ -267,7 +267,7 @@ class SisUtil
 			mt_rand(0, 0x3fff) | 0x8000,
 			mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff));
 	}
-	
+
 	/**
 	 * Generates a variable length random case-independent identifier.
 	 */
@@ -278,10 +278,10 @@ class SisUtil
 			$rs = base_convert(mt_rand(0, 0x39aa3ff), 10, 36);
 			$result .= $rs;
 		} while (($len -= 5) > 0);
-		
+
 		return strtoupper(substr($result, 0, $length));
 	}
-	
+
 	/**
 	 * Generates a variable length random "base90" identifier.
 	 */
@@ -294,10 +294,10 @@ class SisUtil
 			if ($chr == 0x5c) $chr = 0x23; // avoid backslash
 			$result .= chr($chr);
 		}
-		
+
 		return $result;
 	}
-	
+
 	/**
 	 * Returns a 16-byte packed IPv6-ready representation of the IP.
 	 *
@@ -316,7 +316,7 @@ class SisUtil
 		$packedIp = inet_pton($_SERVER['REMOTE_ADDR']);
 		$isIpv4 = strlen($packedIp) == 4;
 		if ($isIpv4) $packedIp = str_repeat(chr(0), 10).str_repeat(chr(255), 2).$packedIp;
-		
+
 		return $packedIp;
 	}
 }
