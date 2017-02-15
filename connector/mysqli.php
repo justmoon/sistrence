@@ -911,6 +911,15 @@ class SisResultMysqli
     $this->result = $result;
   }
 
+  public function fetchAll()
+  {
+    $rows = array();
+    while ($row = $this->result->fetch_assoc()) {
+      $rows[] = $row;
+    }
+    return $rows;
+  }
+
   public function fetchAllSingle()
   {
     $values = array();
