@@ -215,7 +215,11 @@ abstract class SisObject implements ArrayAccess
 			return false;
 		}
 
+		// Ensure entry is loaded
+		$this->getEntry();
+
 		$this->entry = array_merge($this->entry, $this->update);
+
 		$this->update = null;
 	}
 
@@ -238,7 +242,7 @@ abstract class SisObject implements ArrayAccess
 
 		$idField = $class::ID_FIELD;
 		if (is_array($array) && isset($array[$idField])) {
-    		return new $class($array[$idField], $array);
+			return new $class($array[$idField], $array);
 		} elseif (is_array($array) && isset($array[0][$idField])) {
 			return array_map(array($class, 'objectify'), $array);
 		} elseif (@get_class($array) == $class) {
