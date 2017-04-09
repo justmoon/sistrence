@@ -67,6 +67,17 @@ abstract class SisObject implements ArrayAccess
 		return self::objectify($op->doGet());
 	}
 
+	static public function getAllBy($field, $value)
+	{
+		$class = get_called_class();
+
+		$op = Sis::op($class::TABLE);
+		$op->eq($field, $value);
+		$entry = $op->doGet();
+
+		return self::objectify($entry);
+	}
+
 	static public function create($data)
 	{
 		$class = get_called_class();
