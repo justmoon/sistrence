@@ -15,7 +15,7 @@ How to use it?
 You can either use it on the database layer:
 
     // Create new operation
-    $op = Sis::op('mytable');
+    $op = Sistrence::op('mytable');
 
     // Set a condition id=15
     $op->eq('id', 15);
@@ -28,7 +28,9 @@ You can either use it on the database layer:
 
 Or you can define database objects...
 
-    class Customer extends SisObject
+    use Sistrence\PersistentObject;
+
+    class Customer extends PersistentObject
     {
    		const TABLE = 'tbl_customer';
     }
@@ -44,10 +46,10 @@ And that's it, really. :)
 How do I set it up?
 ===================
 
-Put the sistrence folder somewhere in your include path. Then do:
+Install Sistrence using composer, then use it like so:
 
-    require_once 'sistrence/inc.php';
-    Sis::connect_mysqli('database_user', 'password', 'localhost', 'database_name');
+    use Sistrence\Sistrence;
+    Sistrence::connectMysqli('database_user', 'password', 'localhost', 'database_name');
 
 
 The Sistrence cookbook
@@ -76,5 +78,3 @@ Multiple field comparisons in one command
     $op->eq($knownData);
     $op->gt('salary', '80000');
     $downsizingCandidates = Employee::objectify($knownData);
-
-

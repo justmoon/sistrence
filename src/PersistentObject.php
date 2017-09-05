@@ -1,7 +1,10 @@
 <?php
+namespace Sistrence;
+
+use \ArrayAccess;
+
 $dir = dirname(__FILE__);
-require_once($dir.'/set.class.php');
-abstract class SisObject implements ArrayAccess
+abstract class PersistentObject implements ArrayAccess
 {
 	const TABLE = 'no_table_set_check_your_db_object';
 	const ID_FIELD = 'id';
@@ -52,7 +55,7 @@ abstract class SisObject implements ArrayAccess
 	{
 		$class = get_called_class();
 
-		$op = Sis::op($class::TABLE);
+		$op = Sistrence::op($class::TABLE);
 		$op->eq($field, $value);
 		$entry = $op->doGetOne();
 
@@ -63,7 +66,7 @@ abstract class SisObject implements ArrayAccess
 	{
 		$class = get_called_class();
 
-		$op = Sis::op($class::TABLE);
+		$op = Sistrence::op($class::TABLE);
 		return self::objectify($op->doGet());
 	}
 
@@ -71,7 +74,7 @@ abstract class SisObject implements ArrayAccess
 	{
 		$class = get_called_class();
 
-		$op = Sis::op($class::TABLE);
+		$op = Sistrence::op($class::TABLE);
 		$op->eq($field, $value);
 		$entry = $op->doGet();
 
@@ -82,7 +85,7 @@ abstract class SisObject implements ArrayAccess
 	{
 		$class = get_called_class();
 
-		$op = Sis::op($class::TABLE);
+		$op = Sistrence::op($class::TABLE);
 		$id = $op->doInsert($data);
 
 		// Add id to data
@@ -116,7 +119,7 @@ abstract class SisObject implements ArrayAccess
 	static public function op()
 	{
 		$class = get_called_class();
-		return Sis::op($class::TABLE);
+		return Sistrence::op($class::TABLE);
 	}
 
 	/**
@@ -124,7 +127,7 @@ abstract class SisObject implements ArrayAccess
 	 */
 	public function getOp()
 	{
-		$op = Sis::op($this::TABLE);
+		$op = Sistrence::op($this::TABLE);
 		if ($this->id !== null) $op->eq($this::ID_FIELD, $this->id);
 
 		if ($this->customFields !== null) {
@@ -136,7 +139,7 @@ abstract class SisObject implements ArrayAccess
 
 	public function getRowOp()
 	{
-		$op = Sis::op($this::TABLE);
+		$op = Sistrence::op($this::TABLE);
 		if ($this->id !== null) {
 			$op->eq($this::ID_FIELD, $this->id);
 		} else trigger_error('Cannot create row op: Object has no ID', E_USER_ERROR);
@@ -153,7 +156,7 @@ abstract class SisObject implements ArrayAccess
 	 */
 	public function delete()
 	{
-		if ($this->id === null) trigger_error('SisObject::delete() can only delete individual objects.');
+		if ($this->id === null) trigger_error('PersistentObject::delete() can only delete individual objects.');
 
 		$this->getOp()->doDelete();
 	}
